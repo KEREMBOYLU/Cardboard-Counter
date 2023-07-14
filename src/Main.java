@@ -10,8 +10,8 @@ import org.jfree.data.xy.DefaultXYDataset;
 
 public class Main {
     public static void main(String[] args) {
-        String imagePath = "karton.jpg"; // Analiz etmek istediğiniz resmin dosya yolu
-        int threshold = 207000; // Eşik değeri
+        String imagePath = "karton.jpg"; // File path of the image you want to analyze
+        int threshold = 208000; // Threshold value
 
         try {
             BufferedImage image = ImageIO.read(new File(imagePath));
@@ -20,7 +20,7 @@ public class Main {
 
             double[][] data = new double[2][height];
 
-            // Her bir dikey pikseli dolaşarak yataydaki piksellerin gri tonlarını topla ve veri setine ekle
+            // Iterate through each vertical pixel and calculate the sum of grayscale values of horizontal pixels
             for (int y = 0; y < height; y++) {
                 int graySum = 0;
                 for (int x = 0; x < width; x++) {
@@ -28,25 +28,25 @@ public class Main {
                     int grayScale = (pixelColor.getRed() + pixelColor.getGreen() + pixelColor.getBlue()) / 3;
                     graySum += grayScale;
                 }
-                data[0][y] = y + 1; // Dikey piksel sayısı
-                data[1][y] = graySum; // Yataydaki gri ton toplamı
+                data[0][y] = y + 1; // Vertical pixel count
+                data[1][y] = graySum; // Sum of grayscale values in the horizontal direction
             }
 
             DefaultXYDataset dataset = new DefaultXYDataset();
-            dataset.addSeries("Gri Ton Toplamları", data);
+            dataset.addSeries("Grayscale Sums", data);
 
             JFreeChart chart = ChartFactory.createXYLineChart(
-                    "Gri Ton Toplamları",
-                    "Dikey Piksel Sayısı",
-                    "Yataydaki Gri Ton Toplamı",
+                    "Grayscale Sums",
+                    "Vertical Pixel Count",
+                    "Sum of Grayscale Values in the Horizontal Direction",
                     dataset
             );
 
-            ChartFrame frame = new ChartFrame("Gri Ton Analizi", chart);
+            ChartFrame frame = new ChartFrame("Grayscale Analysis", chart);
             frame.pack();
             frame.setVisible(true);
 
-            // Peak değerlerini hesapla
+            // Calculate the number of peaks
             int peakCount = 0;
             for (int y = 1; y < height - 1; y++) {
                 double prevValue = data[1][y - 1];
@@ -56,7 +56,7 @@ public class Main {
                     peakCount++;
                 }
             }
-            System.out.println(threshold + " Üzerindeki Peak Noktalarının Sayısı: " + peakCount);
+            System.out.println("Number of Peaks above " + threshold + ": " + peakCount);
         } catch (IOException e) {
             e.printStackTrace();
         }
