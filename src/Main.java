@@ -10,7 +10,8 @@ import org.jfree.data.xy.DefaultXYDataset;
 
 public class Main {
     public static void main(String[] args) {
-        String imagePath = "Karton.jpg"; // Analiz etmek istediğiniz resmin dosya yolu
+        String imagePath = "karton.jpg"; // Analiz etmek istediğiniz resmin dosya yolu
+        int threshold = 207000; // Eşik değeri
 
         try {
             BufferedImage image = ImageIO.read(new File(imagePath));
@@ -44,6 +45,18 @@ public class Main {
             ChartFrame frame = new ChartFrame("Gri Ton Analizi", chart);
             frame.pack();
             frame.setVisible(true);
+
+            // Peak değerlerini hesapla
+            int peakCount = 0;
+            for (int y = 1; y < height - 1; y++) {
+                double prevValue = data[1][y - 1];
+                double currentValue = data[1][y];
+                double nextValue = data[1][y + 1];
+                if (currentValue > prevValue && currentValue > nextValue && currentValue > threshold) {
+                    peakCount++;
+                }
+            }
+            System.out.println(threshold + " Üzerindeki Peak Noktalarının Sayısı: " + peakCount);
         } catch (IOException e) {
             e.printStackTrace();
         }
