@@ -126,9 +126,10 @@ public class Main {
                 g2d.dispose(); // Release resources used by the graphics object
 
                 // Save the modified image as JPEG
-                String outputImagePath = imagePath.substring(0, imagePath.lastIndexOf('.')) + "_m222odified.jpg";
+                String outputImagePath = imagePath.substring(0, imagePath.lastIndexOf('.')) + "_m2222222odified.jpg";
                 File outputFile = new File(outputImagePath);
                 ImageIO.write(image, "jpg", outputFile);
+                System.out.println("yüklend");
 
             } catch (IOException e) {
                 e.printStackTrace();
