@@ -1,16 +1,17 @@
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+
 import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.DefaultXYDataset;
-
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Main {
     public static void main(String[] args) {
@@ -88,6 +89,47 @@ public class Main {
                 smoothedDataChartFrame.pack();
                 smoothedDataChartFrame.setVisible(true);
 
+                // Create a graphics object to draw on the image
+                Graphics2D g2d = image.createGraphics();
+                g2d.setColor(Color.RED);
+
+                int rectWidth = width; // Width of the rectangle (same as the image width)
+                int rectHeight = 10; // Initial height of each rectangle (10 pixels)
+
+                int[] bumpPositions = new int[bumpCount + 1]; // Array to store the pixel positions of bumps
+
+                int bumpIndex = 0;
+                boolean inBump = false;
+
+                // Iterate through the smoothed data and record the pixel positions of bumps
+                for (int i = 0; i < smoothedData[0].length - 1; i++) {
+                    if (!inBump && smoothedData[1][i] < smoothedData[1][i + 1]) {
+                        inBump = true;
+                        bumpPositions[bumpIndex] = (int) smoothedData[0][i];
+                        bumpIndex++;
+                    } else if (inBump && smoothedData[1][i] > smoothedData[1][i + 1]) {
+                        inBump = false;
+                    }
+                }
+
+                // Draw red bars at the positions of bumps
+                for (int i = 0; i < bumpCount; i++) {
+                    int centerX = width / 2;
+                    int centerY = bumpPositions[i];
+
+                    int rectX = centerX - (rectWidth / 2);
+                    int rectY = centerY - (rectHeight / 2);
+
+                    g2d.fillRect(rectX, rectY, rectWidth, rectHeight);
+                }
+
+                g2d.dispose(); // Release resources used by the graphics object
+
+                // Save the modified image as JPEG
+                String outputImagePath = imagePath.substring(0, imagePath.lastIndexOf('.')) + "_m222odified.jpg";
+                File outputFile = new File(outputImagePath);
+                ImageIO.write(image, "jpg", outputFile);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -146,17 +188,13 @@ public class Main {
                         bumpCount++;
                         inBump = true;
                     }
-
                 }
-            } else if (slope <= 0) { // Negatif veya sıfır eğim olduğunda "bump" dışında kabul edilir
-
+            } else if (slope <= 0) {
                 inBump = false;
-
             }
         }
         return bumpCount;
     }
-
 
     private static JFreeChart createChart(double[][] data) {
         DefaultXYDataset dataset = new DefaultXYDataset();
