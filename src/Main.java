@@ -75,10 +75,13 @@ public class Main {
                 smoothedFrame.pack();
                 smoothedFrame.setVisible(true);
 
-                // Calculate the number of peaks in the smoothed data
-                int peakCount = countPeaks(smoothedData);
+                // Perform slope analysis to detect bumps
+                double[] slopes = calculateSlopes(smoothedData);
 
-                System.out.println("Number of Peaks: " + peakCount);
+                // Detect bumps based on positive and negative slopes
+                int bumpCount = countBumps(slopes);
+
+                System.out.println("Number of Bumps: " + bumpCount);
 
                 // Show the smoothed data chart
                 ChartFrame smoothedDataChartFrame = new ChartFrame("Smoothed Data Analysis", createChart(smoothedData));
@@ -109,21 +112,51 @@ public class Main {
         return smoothedData;
     }
 
-    private static int countPeaks(double[][] data) {
-        int peakCount = 0;
+    private static double[] calculateSlopes(double[][] data) {
         int height = data[0].length;
 
-        for (int i = 1; i < height - 1; i++) {
-            double prevValue = data[1][i - 1];
-            double currentValue = data[1][i];
-            double nextValue = data[1][i + 1];
-            if (currentValue > prevValue && currentValue > nextValue) {
-                peakCount++;
-            }
+        double[] slopes = new double[height - 1];
+
+        for (int i = 0; i < height - 1; i++) {
+            double x1 = data[0][i];
+            double y1 = data[1][i];
+            double x2 = data[0][i + 1];
+            double y2 = data[1][i + 1];
+
+            double slope = (y2 - y1) / (x2 - x1);
+            slopes[i] = slope;
         }
 
-        return peakCount;
+        return slopes;
     }
+
+    private static int countBumps(double[] slopes) {
+        int bumpCount = 0;
+        int length = slopes.length;
+
+        boolean inBump = false; // Flag to indicate if currently inside a bump
+
+        for (int i = 0; i < length - 1; i++) {
+            double slope = slopes[i];
+
+            if (slope > 0) {
+                slope = slopes[i + 1];
+                if (slope <= 0) {
+                    if (!inBump) {
+                        bumpCount++;
+                        inBump = true;
+                    }
+
+                }
+            } else if (slope <= 0) { // Negatif veya sıfır eğim olduğunda "bump" dışında kabul edilir
+
+                inBump = false;
+
+            }
+        }
+        return bumpCount;
+    }
+
 
     private static JFreeChart createChart(double[][] data) {
         DefaultXYDataset dataset = new DefaultXYDataset();
