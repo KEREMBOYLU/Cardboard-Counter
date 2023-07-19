@@ -76,7 +76,7 @@ public class Main {
                 smoothedFrame.pack();
                 smoothedFrame.setVisible(true);
 
-                saveDataToExcel(smoothedData, "smoothed_data.csv");
+                //saveDataToExcel(smoothedData, "smoothed_data.csv");
 
             } catch (IOException e) {
                 e.printStackTrace();

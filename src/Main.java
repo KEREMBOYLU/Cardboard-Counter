@@ -1,17 +1,18 @@
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartFrame;
+import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.DefaultXYDataset;
+import javax.swing.JFrame;
 
 public class Main {
     public static void main(String[] args) {
@@ -46,90 +47,37 @@ public class Main {
                 DefaultXYDataset dataset = new DefaultXYDataset();
                 dataset.addSeries("Grayscale Sums", data);
 
-                JFreeChart chart = ChartFactory.createXYLineChart(
-                        "Grayscale Sums",
-                        "Vertical Pixel Count",
-                        "Sum of Grayscale Values in the Horizontal Direction",
-                        dataset
-                );
+                JFreeChart chart = createChart(dataset);
 
-                ChartFrame frame = new ChartFrame("Grayscale Analysis", chart);
+                JFrame frame = new JFrame("Grayscale Analysis");
+                ChartPanel chartPanel = new ChartPanel(chart);
+                frame.setContentPane(chartPanel);
                 frame.pack();
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
 
                 // Apply smoothing to the data
                 int windowSize = 45; // Size of the window for smoothing
+                int[] windowShifts = {10, 20, 30}; // Array of window shift values
 
-                double[][] smoothedData = smoothData(data, windowSize);
+                for (int windowShift : windowShifts) {
+                    double[][] smoothedData = scanMountains(data, windowSize);
 
-                DefaultXYDataset smoothedDataset = new DefaultXYDataset();
-                smoothedDataset.addSeries("Smoothed Grayscale Sums", smoothedData);
+                    DefaultXYDataset smoothedDataset = new DefaultXYDataset();
+                    smoothedDataset.addSeries("Smoothed Grayscale Sums", smoothedData);
 
-                JFreeChart smoothedChart = ChartFactory.createXYLineChart(
-                        "Smoothed Grayscale Sums",
-                        "Vertical Pixel Count",
-                        "Sum of Grayscale Values in the Horizontal Direction",
-                        smoothedDataset
-                );
+                    JFreeChart smoothedChart = createChart(smoothedDataset);
 
-                ChartFrame smoothedFrame = new ChartFrame("Smoothed Grayscale Analysis", smoothedChart);
-                smoothedFrame.pack();
-                smoothedFrame.setVisible(true);
+                    JFrame smoothedFrame = new JFrame("Smoothed Grayscale Analysis (" + windowShift + ")");
+                    ChartPanel smoothedChartPanel = new ChartPanel(smoothedChart);
+                    smoothedFrame.setContentPane(smoothedChartPanel);
+                    smoothedFrame.pack();
+                    smoothedFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    smoothedFrame.setVisible(true);
 
-                // Perform slope analysis to detect bumps
-                double[] slopes = calculateSlopes(smoothedData);
-
-                // Detect bumps based on positive and negative slopes
-                int bumpCount = countBumps(slopes);
-
-                System.out.println("Number of Bumps: " + bumpCount);
-
-                // Show the smoothed data chart
-                ChartFrame smoothedDataChartFrame = new ChartFrame("Smoothed Data Analysis", createChart(smoothedData));
-                smoothedDataChartFrame.pack();
-                smoothedDataChartFrame.setVisible(true);
-
-                // Create a graphics object to draw on the image
-                Graphics2D g2d = image.createGraphics();
-                g2d.setColor(Color.RED);
-
-                int rectWidth = width; // Width of the rectangle (same as the image width)
-                int rectHeight = 10; // Initial height of each rectangle (10 pixels)
-
-                int[] bumpPositions = new int[bumpCount + 1]; // Array to store the pixel positions of bumps
-
-                int bumpIndex = 0;
-                boolean inBump = false;
-
-                // Iterate through the smoothed data and record the pixel positions of bumps
-                for (int i = 0; i < smoothedData[0].length - 1; i++) {
-                    if (!inBump && smoothedData[1][i] < smoothedData[1][i + 1]) {
-                        inBump = true;
-                        bumpPositions[bumpIndex] = (int) smoothedData[0][i];
-                        bumpIndex++;
-                    } else if (inBump && smoothedData[1][i] > smoothedData[1][i + 1]) {
-                        inBump = false;
-                    }
+                    animateChart(smoothedChartPanel, smoothedData, windowShift);
+                    animateOverlay(chartPanel, smoothedData, windowShift);
                 }
-
-                // Draw red bars at the positions of bumps
-                for (int i = 0; i < bumpCount; i++) {
-                    int centerX = width / 2;
-                    int centerY = bumpPositions[i];
-
-                    int rectX = centerX - (rectWidth / 2);
-                    int rectY = centerY - (rectHeight / 2);
-
-                    g2d.fillRect(rectX, rectY, rectWidth, rectHeight);
-                }
-
-                g2d.dispose(); // Release resources used by the graphics object
-
-                // Save the modified image as JPEG
-                String outputImagePath = imagePath.substring(0, imagePath.lastIndexOf('.')) + "_m2222222odified.jpg";
-                File outputFile = new File(outputImagePath);
-                ImageIO.write(image, "jpg", outputFile);
-                System.out.println("yüklend");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -137,7 +85,26 @@ public class Main {
         }
     }
 
-    private static double[][] smoothData(double[][] data, int windowSize) {
+    private static JFreeChart createChart(DefaultXYDataset dataset) {
+        JFreeChart chart = ChartFactory.createXYLineChart(
+                null,
+                "Vertical Pixel Count",
+                "Sum of Grayscale Values in the Horizontal Direction",
+                dataset
+        );
+
+        XYPlot plot = chart.getXYPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.BLACK);
+        plot.setDomainGridlinePaint(Color.BLACK);
+
+        NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
+        xAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+
+        return chart;
+    }
+
+    private static double[][] scanMountains(double[][] data, int windowSize) {
         int height = data[0].length;
         int smoothedHeight = height - windowSize + 1;
 
@@ -149,65 +116,71 @@ public class Main {
                 sum += data[1][j];
             }
             smoothedData[0][i] = data[0][i + windowSize / 2]; // Use the middle point of the window
-            smoothedData[1][i] = sum / windowSize; // Average of the values in the window
+            smoothedData[1][i] = (double) sum / windowSize; // Average of the values in the window
         }
 
         return smoothedData;
     }
 
-    private static double[] calculateSlopes(double[][] data) {
-        int height = data[0].length;
+    private static void animateChart(ChartPanel chartPanel, double[][] data, int windowShift) {
+        Thread animationThread = new Thread(() -> {
+            int height = data[0].length;
+            int windowCount = height - windowShift * 2 + 1;
 
-        double[] slopes = new double[height - 1];
+            for (int i = 0; i < windowCount; i++) {
+                double[][] windowData = new double[2][windowShift];
+                System.arraycopy(data[0], i, windowData[0], 0, windowShift);
+                System.arraycopy(data[1], i, windowData[1], 0, windowShift);
 
-        for (int i = 0; i < height - 1; i++) {
-            double x1 = data[0][i];
-            double y1 = data[1][i];
-            double x2 = data[0][i + 1];
-            double y2 = data[1][i + 1];
+                DefaultXYDataset windowDataset = new DefaultXYDataset();
+                windowDataset.addSeries("Window Data", windowData);
 
-            double slope = (y2 - y1) / (x2 - x1);
-            slopes[i] = slope;
-        }
+                chartPanel.getChart().getXYPlot().setDataset(windowDataset);
+                chartPanel.repaint();
 
-        return slopes;
-    }
-
-    private static int countBumps(double[] slopes) {
-        int bumpCount = 0;
-        int length = slopes.length;
-
-        boolean inBump = false; // Flag to indicate if currently inside a bump
-
-        for (int i = 0; i < length - 1; i++) {
-            double slope = slopes[i];
-
-            if (slope > 0) {
-                slope = slopes[i + 1];
-                if (slope <= 0) {
-                    if (!inBump) {
-                        bumpCount++;
-                        inBump = true;
-                    }
+                try {
+                    Thread.sleep(100); // Adjust the animation speed here (in milliseconds)
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } else if (slope <= 0) {
-                inBump = false;
             }
-        }
-        return bumpCount;
+        });
+
+        animationThread.start();
     }
 
-    private static JFreeChart createChart(double[][] data) {
+    private static void animateOverlay(ChartPanel chartPanel, double[][] data, int windowShift) {
+        Thread overlayThread = new Thread(() -> {
+            int height = data[0].length;
+            int windowCount = height - windowShift * 2 + 1;
+
+            for (int i = 0; i < windowCount; i++) {
+                double[][] overlayData = new double[2][windowShift];
+                System.arraycopy(data[0], i + windowShift, overlayData[0], 0, windowShift);
+                System.arraycopy(data[1], i + windowShift, overlayData[1], 0, windowShift);
+
+                XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+                renderer.setSeriesPaint(0, Color.RED);
+
+                chartPanel.getChart().getXYPlot().setRenderer(1, renderer);
+                chartPanel.getChart().getXYPlot().setDataset(1, createDataset(overlayData));
+                chartPanel.getChart().getXYPlot().mapDatasetToRangeAxis(1, 1);
+                chartPanel.repaint();
+
+                try {
+                    Thread.sleep(100); // Adjust the animation speed here (in milliseconds)
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        overlayThread.start();
+    }
+
+    private static DefaultXYDataset createDataset(double[][] data) {
         DefaultXYDataset dataset = new DefaultXYDataset();
-        dataset.addSeries("Smoothed Grayscale Sums", data);
-
-        JFreeChart chart = ChartFactory.createXYLineChart(
-                "Smoothed Data Analysis",
-                "Vertical Pixel Count",
-                "Sum of Grayscale Values in the Horizontal Direction",
-                dataset
-        );
-
-        return chart;
+        dataset.addSeries("Overlay Data", data);
+        return dataset;
     }
 }
