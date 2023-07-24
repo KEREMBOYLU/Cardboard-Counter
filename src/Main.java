@@ -1,18 +1,17 @@
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.DefaultXYDataset;
-import javax.swing.JFrame;
 
 public class Main {
     public static void main(String[] args) {
@@ -47,37 +46,39 @@ public class Main {
                 DefaultXYDataset dataset = new DefaultXYDataset();
                 dataset.addSeries("Grayscale Sums", data);
 
-                JFreeChart chart = createChart(dataset);
+                JFreeChart chart = ChartFactory.createXYLineChart(
+                        "Grayscale Sums",
+                        "Vertical Pixel Count",
+                        "Sum of Grayscale Values in the Horizontal Direction",
+                        dataset
+                );
 
-                JFrame frame = new JFrame("Grayscale Analysis");
-                ChartPanel chartPanel = new ChartPanel(chart);
-                frame.setContentPane(chartPanel);
+                ChartFrame frame = new ChartFrame("Grayscale Analysis", chart);
                 frame.pack();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
 
                 // Apply smoothing to the data
                 int windowSize = 45; // Size of the window for smoothing
-                int[] windowShifts = {10, 20, 30}; // Array of window shift values
 
-                for (int windowShift : windowShifts) {
-                    double[][] smoothedData = scanMountains(data, windowSize);
+                double[][] smoothedData = smoothData(data, windowSize);
 
-                    DefaultXYDataset smoothedDataset = new DefaultXYDataset();
-                    smoothedDataset.addSeries("Smoothed Grayscale Sums", smoothedData);
+                DefaultXYDataset smoothedDataset = new DefaultXYDataset();
+                smoothedDataset.addSeries("Smoothed Grayscale Sums", smoothedData);
 
-                    JFreeChart smoothedChart = createChart(smoothedDataset);
+                JFreeChart smoothedChart = ChartFactory.createXYLineChart(
+                        "Smoothed Grayscale Sums",
+                        "Vertical Pixel Count",
+                        "Sum of Grayscale Values in the Horizontal Direction",
+                        smoothedDataset
+                );
 
-                    JFrame smoothedFrame = new JFrame("Smoothed Grayscale Analysis (" + windowShift + ")");
-                    ChartPanel smoothedChartPanel = new ChartPanel(smoothedChart);
-                    smoothedFrame.setContentPane(smoothedChartPanel);
-                    smoothedFrame.pack();
-                    smoothedFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                    smoothedFrame.setVisible(true);
+                ChartFrame smoothedFrame = new ChartFrame("Smoothed Grayscale Analysis", smoothedChart);
+                smoothedFrame.pack();
+                smoothedFrame.setVisible(true);
 
-                    animateChart(smoothedChartPanel, smoothedData, windowShift);
-                    animateOverlay(chartPanel, smoothedData, windowShift);
-                }
+                findPeaks(smoothedData);
+
+                //saveDataToExcel(smoothedData, "smoothed_data.csv");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -85,26 +86,7 @@ public class Main {
         }
     }
 
-    private static JFreeChart createChart(DefaultXYDataset dataset) {
-        JFreeChart chart = ChartFactory.createXYLineChart(
-                null,
-                "Vertical Pixel Count",
-                "Sum of Grayscale Values in the Horizontal Direction",
-                dataset
-        );
-
-        XYPlot plot = chart.getXYPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setRangeGridlinePaint(Color.BLACK);
-        plot.setDomainGridlinePaint(Color.BLACK);
-
-        NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
-        xAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-
-        return chart;
-    }
-
-    private static double[][] scanMountains(double[][] data, int windowSize) {
+    private static double[][] smoothData(double[][] data, int windowSize) {
         int height = data[0].length;
         int smoothedHeight = height - windowSize + 1;
 
@@ -122,65 +104,41 @@ public class Main {
         return smoothedData;
     }
 
-    private static void animateChart(ChartPanel chartPanel, double[][] data, int windowShift) {
-        Thread animationThread = new Thread(() -> {
-            int height = data[0].length;
-            int windowCount = height - windowShift * 2 + 1;
+    private static void saveDataToExcel(double[][] data, String filename) {
+        try {
+            FileWriter writer = new FileWriter(filename);
+            writer.write("x,y\n");
 
-            for (int i = 0; i < windowCount; i++) {
-                double[][] windowData = new double[2][windowShift];
-                System.arraycopy(data[0], i, windowData[0], 0, windowShift);
-                System.arraycopy(data[1], i, windowData[1], 0, windowShift);
-
-                DefaultXYDataset windowDataset = new DefaultXYDataset();
-                windowDataset.addSeries("Window Data", windowData);
-
-                chartPanel.getChart().getXYPlot().setDataset(windowDataset);
-                chartPanel.repaint();
-
-                try {
-                    Thread.sleep(100); // Adjust the animation speed here (in milliseconds)
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            for (int i = 0; i < data[0].length; i++) {
+                writer.write(data[0][i] + "," + data[1][i] + "\n");
             }
-        });
 
-        animationThread.start();
+            writer.close();
+            System.out.println("Data saved to " + filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+    private static double[][] findPeaks(double[][] data) {
+        int peakCount = 0;
+        int length = data[0].length;
 
-    private static void animateOverlay(ChartPanel chartPanel, double[][] data, int windowShift) {
-        Thread overlayThread = new Thread(() -> {
-            int height = data[0].length;
-            int windowCount = height - windowShift * 2 + 1;
-
-            for (int i = 0; i < windowCount; i++) {
-                double[][] overlayData = new double[2][windowShift];
-                System.arraycopy(data[0], i + windowShift, overlayData[0], 0, windowShift);
-                System.arraycopy(data[1], i + windowShift, overlayData[1], 0, windowShift);
-
-                XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-                renderer.setSeriesPaint(0, Color.RED);
-
-                chartPanel.getChart().getXYPlot().setRenderer(1, renderer);
-                chartPanel.getChart().getXYPlot().setDataset(1, createDataset(overlayData));
-                chartPanel.getChart().getXYPlot().mapDatasetToRangeAxis(1, 1);
-                chartPanel.repaint();
-
-                try {
-                    Thread.sleep(100); // Adjust the animation speed here (in milliseconds)
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        // To count the peaks, we'll consider a data point as a peak if it is greater
+        // than both of its neighboring data points.
+        for (int i = 1; i < length - 1; i++) {
+            if (data[1][i] > data[1][i - 1] && data[1][i] > data[1][i + 1]) {
+                peakCount++;
             }
-        });
+        }
 
-        overlayThread.start();
-    }
+        System.out.println("Number of peaks in the smoothed data: " + peakCount);
 
-    private static DefaultXYDataset createDataset(double[][] data) {
-        DefaultXYDataset dataset = new DefaultXYDataset();
-        dataset.addSeries("Overlay Data", data);
-        return dataset;
+        // We'll return an array that includes the peak count as the first row,
+        // and the smoothed data as the second row.
+        double[][] result = new double[2][length];
+        result[0][0] = peakCount;
+        System.arraycopy(data[1], 0, result[1], 0, length);
+
+        return result;
     }
 }

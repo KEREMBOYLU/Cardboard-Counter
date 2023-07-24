@@ -1,0 +1,81 @@
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.apache.commons.math3.ml.clustering.Cluster;
+import org.apache.commons.math3.ml.clustering.DoublePoint;
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.imageio.ImageIO;
+import org.jfree.data.xy.DefaultXYDataset;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartFrame;
+
+public class Main {
+
+    public static void main(String[] args) {
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "jpg", "png", "bmp");
+        fileChooser.setFileFilter(filter);
+
+        int result = fileChooser.showOpenDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                BufferedImage image = ImageIO.read(selectedFile);
+                int width = image.getWidth();
+                int height = image.getHeight();
+
+                int[][] data = new int[height][width];
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        int rgb = image.getRGB(x, y);
+                        int gray = (int) (0.3 * ((rgb >> 16) & 0xFF) + 0.59 * ((rgb >> 8) & 0xFF) + 0.11 * (rgb & 0xFF));
+                        data[y][x] = gray;
+                    }
+                }
+
+                // K-means clustering
+                int k = 6; // Number of clusters (you can change this as needed)
+                KMeansPlusPlusClusterer<DoublePoint> clusterer = new KMeansPlusPlusClusterer<>(k, 1000);
+                List<DoublePoint> points = new ArrayList<>();
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        points.add(new DoublePoint(new double[]{data[y][x]}));
+                    }
+                }
+                List<CentroidCluster<DoublePoint>> clusters = clusterer.cluster(points);
+
+                // Prepare data for the chart
+                DefaultXYDataset dataset = new DefaultXYDataset();
+                for (int i = 0; i < k; i++) {
+                    double[][] clusterData = new double[2][clusters.get(i).getPoints().size()];
+                    int j = 0;
+                    for (DoublePoint point : clusters.get(i).getPoints()) {
+                        clusterData[0][j] = point.getPoint()[0];
+                        clusterData[1][j] = 1.0; // Just for plotting purposes, assign a y-value of 1.0 to each data point
+                        j++;
+                    }
+                    dataset.addSeries("Cluster " + i, clusterData);
+                }
+
+                // Create the chart
+                org.jfree.chart.JFreeChart chart = ChartFactory.createScatterPlot("K-Means Grayscale Clustering", "Grayscale Value", "Cluster", dataset);
+                ChartPanel chartPanel = new ChartPanel(chart);
+
+                // Display the chart
+                ChartFrame frame = new ChartFrame("K-Means Clustering", chart);
+                frame.setContentPane(chartPanel);
+                frame.pack();
+                frame.setVisible(true);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

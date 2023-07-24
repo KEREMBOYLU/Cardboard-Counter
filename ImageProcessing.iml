@@ -7,7 +7,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="jfree.jfreechart" level="project" />
     <orderEntry type="library" name="apache.poi" level="project" />
+    <orderEntry type="library" name="jfree.jfreechart" level="project" />
+    <orderEntry type="library" name="commons-math3-3.6.1" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
   </component>
 </module>
