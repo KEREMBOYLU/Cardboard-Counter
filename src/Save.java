@@ -1,3 +1,7 @@
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,12 +25,11 @@ public class Save {
         }
     }
 
-    public static double[] findPeaksAboveThreshold(double[][] data, int threshold) {
-        List<Double> peakHeights = new ArrayList<>();
+    public static double[] findXCoordinatesOfPeaksAboveThreshold(double[][] data, int threshold) {
+        List<Double> peakCoordinates = new ArrayList<>();
 
         for (int i = 0; i < data.length; i++) {
             boolean aboveThreshold = data[i][0] >= threshold;
-            double peakHeight = -1.0;
 
             for (int j = 1; j < data[i].length; j++) {
                 boolean currentAbove = data[i][j] >= threshold;
@@ -34,23 +37,48 @@ public class Save {
                 if (currentAbove != aboveThreshold) {
                     if (!currentAbove) {
                         // Tepe noktası bulundu
-                        if (peakHeight != -1.0) {
-                            peakHeights.add(peakHeight);
-                        }
-                        peakHeight = data[i][j];
+                        peakCoordinates.add((double) j);
                     }
-                } else if (currentAbove && data[i][j] > peakHeight) {
-                    peakHeight = data[i][j];
                 }
                 aboveThreshold = currentAbove;
             }
-
-            if (peakHeight != -1.0) {
-                peakHeights.add(peakHeight);
-            }
         }
 
-        return peakHeights.stream().mapToDouble(Double::doubleValue).toArray();
+        return peakCoordinates.stream().mapToDouble(Double::doubleValue).toArray();
+    }
+
+    public static void drawRedBars(BufferedImage image, double[] xCoordinates) {
+        Graphics2D g2d = image.createGraphics();
+        g2d.setColor(Color.RED);
+
+        int rectHeight = 10; // Çubukların yüksekliği
+
+        for (double x : xCoordinates) {
+            int centerX = (int) Math.round(x);
+            int centerY = image.getHeight() / 2; // Yatayda merkezlemek için
+
+            int rectX = centerX - (image.getWidth() / 2);
+            int rectY = centerY - (rectHeight / 2);
+
+            g2d.fillRect(rectX, rectY, image.getWidth(), rectHeight);
+        }
+
+        g2d.dispose();
+    }
+
+    public static void saveImageWithRedBars(String filename, BufferedImage image, String imagePath, double[] xCoordinates) {
+        drawRedBars(image, xCoordinates);
+
+
+        String outputImagePath = imagePath.substring(0, imagePath.lastIndexOf('.')) + filename;
+        File outputFile = new File(outputImagePath);
+
+        try {
+            ImageIO.write(image, "jpg", outputFile);
+            System.out.println("Kırmızı çubuklar yerleştirilmiş görüntü kaydedildi: " + outputFile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 

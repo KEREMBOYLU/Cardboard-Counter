@@ -102,13 +102,20 @@ public class Main {
                 Count.countThresholdLines(smoothedOTSUGrayscaleIntersections,"Smoothed OTSU Grayscale");
 
                 // Veri kümesinde threshold değerimizin üzerinde kalan tepe noktalarını heights dizisine saklayın
-                double[] heights1 = Save.findPeaksAboveThreshold(smoothedData, threshold);
-                double[] heights2 = Save.findPeaksAboveThreshold(OTSU_smoothedData, threshold_OTSU);
+                double[] heights1 = Save.findXCoordinatesOfPeaksAboveThreshold(smoothedData, threshold);
+                double[] heights2 = Save.findXCoordinatesOfPeaksAboveThreshold(OTSU_smoothedData, threshold_OTSU);
 
 
                 // heights dizilerini yazdırın
                 System.out.println("Heights: " + java.util.Arrays.toString(heights1));
                 System.out.println("Heights otsu: " + java.util.Arrays.toString(heights2));
+
+                // Kırmızı çubukları normal görüntü üzerine yerleştir ve görüntüleri kaydet
+
+                String filename = "redBars.jpg";
+                String filename_OTSU = "redBars_OTSU.jpg";
+                Save.saveImageWithRedBars(filename,image, imagePath, heights1);
+                Save.saveImageWithRedBars(filename_OTSU,OTSU_threshold, imagePath, heights2);
 
 
             } catch (IOException e) {
