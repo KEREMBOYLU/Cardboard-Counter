@@ -1,4 +1,5 @@
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -51,13 +52,15 @@ public class Save {
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(Color.RED);
 
-        int rectHeight = 10; // Çubukların yüksekliği
+        int rectHeight = 20; // Çubukların yüksekliği
+        int width = image.getWidth();
 
-        for (double x : xCoordinates) {
-            int centerX = (int) Math.round(x);
-            int centerY = image.getHeight() / 2; // Yatayda merkezlemek için
+        for (int i = 0; i < xCoordinates.length; i++) {
 
-            int rectX = centerX - (image.getWidth() / 2);
+            int centerX = width / 2;
+            int centerY = (int)xCoordinates[i]; // Yatayda merkezlemek için
+
+            int rectX = centerX - (width / 2);
             int rectY = centerY - (rectHeight / 2);
 
             g2d.fillRect(rectX, rectY, image.getWidth(), rectHeight);
@@ -69,9 +72,31 @@ public class Save {
     public static void saveImageWithRedBars(String filename, BufferedImage image, String imagePath, double[] xCoordinates) {
         drawRedBars(image, xCoordinates);
 
-
         String outputImagePath = imagePath.substring(0, imagePath.lastIndexOf('.')) + filename;
         File outputFile = new File(outputImagePath);
+
+
+        JFrame frame = new JFrame();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setTitle("Image with Red Bars");
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int maxWidth = screenSize.width - 50;
+        int maxHeight = screenSize.height - 50;
+
+        int imgWidth = image.getWidth();
+        int imgHeight = image.getHeight();
+
+        double scale = Math.min((double) maxWidth / imgWidth, (double) maxHeight / imgHeight);
+        int newWidth = (int) (imgWidth * scale);
+        int newHeight = (int) (imgHeight * scale);
+
+        ImageIcon scaledIcon = new ImageIcon(image.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
+        frame.getContentPane().setLayout(new BorderLayout());
+        frame.getContentPane().add(new JLabel(scaledIcon));
+        frame.pack();
+        frame.setLocationRelativeTo(null); // Center the frame on the screen
+        frame.setVisible(true);
 
         try {
             ImageIO.write(image, "jpg", outputFile);

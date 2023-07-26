@@ -1,8 +1,6 @@
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,15 +105,15 @@ public class Main {
 
 
                 // heights dizilerini yazdırın
-                System.out.println("Heights: " + java.util.Arrays.toString(heights1));
-                System.out.println("Heights otsu: " + java.util.Arrays.toString(heights2));
+                //System.out.println("Heights: " + java.util.Arrays.toString(heights1));
+                //System.out.println("Heights otsu: " + java.util.Arrays.toString(heights2));
 
                 // Kırmızı çubukları normal görüntü üzerine yerleştir ve görüntüleri kaydet
 
                 String filename = "redBars.jpg";
                 String filename_OTSU = "redBars_OTSU.jpg";
                 Save.saveImageWithRedBars(filename,image, imagePath, heights1);
-                Save.saveImageWithRedBars(filename_OTSU,OTSU_threshold, imagePath, heights2);
+                //Save.saveImageWithRedBars(filename_OTSU,OTSU_threshold, imagePath, heights2);
 
 
             } catch (IOException e) {
