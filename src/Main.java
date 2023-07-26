@@ -113,7 +113,7 @@ public class Main {
                 String filename = "redBars.jpg";
                 String filename_OTSU = "redBars_OTSU.jpg";
                 Save.saveImageWithRedBars(filename,image, imagePath, heights1);
-                //Save.saveImageWithRedBars(filename_OTSU,OTSU_threshold, imagePath, heights2);
+                Save.saveImageWithRedBars(filename_OTSU,OTSU_threshold, imagePath, heights2);
 
 
             } catch (IOException e) {
